@@ -6,15 +6,18 @@
 
 A responsive device preview application with AI-powered chat assistance. View and test your web applications across multiple device sizes simultaneously with real-time preview, screenshot capture, and integrated AI analysis powered by Google Gemini.
 
+Available as both a web app and Electron desktop app (Electron version bypasses CORS/X-Frame-Options).
+
 ## ✨ Features
 
 - **Multi-Device Preview**: View your website on multiple devices (mobile, tablet, desktop) simultaneously
 - **Custom Device Configuration**: Add and customize your own device sizes
 - **AI Chat Assistant**: Integrated Gemini AI to analyze screenshots and answer questions
 - **Screenshot Capture**: Take full-page screenshots of all device previews at once
-- **Theme Support**: Multiple theme options (cyber, minimal, ocean, sunset)
+- **Theme Support**: Multiple theme options (cyber, lab)
 - **Responsive Controls**: Real-time URL updates and device size adjustments
 - **Sync Scrolling**: Optional synchronized scrolling across all device frames
+- **Electron Desktop App**: Bypass CORS/X-Frame-Options restrictions with webview integration
 
 ## 🚀 Getting Started
 
@@ -48,24 +51,35 @@ A responsive device preview application with AI-powered chat assistance. View an
 
 4. Run the development server:
 
+   **Web mode:**
    ```bash
    npm run dev
    ```
 
-5. Open your browser and navigate to the local development URL (typically `http://localhost:5173`)
+   **Electron mode:**
+   ```bash
+   npm run electron-dev
+   ```
+
+5. Open your browser and navigate to the local development URL (typically `https://localhost:9898`)
 
 ## 📦 Build
 
-To build the application for production:
-
+**Web app:**
 ```bash
 npm run build
+npm run preview
 ```
 
-To preview the production build:
-
+**Electron app:**
 ```bash
-npm run preview
+npm run build
+npm run electron
+```
+
+**Package Electron (portable + MSI):**
+```bash
+npm run package
 ```
 
 ## 🛠️ Tech Stack
@@ -73,9 +87,10 @@ npm run preview
 - **React 19** - UI framework
 - **TypeScript** - Type safety
 - **Vite** - Build tool and dev server
+- **Tailwind CSS v4** - Styling
+- **Electron** - Desktop app runtime
 - **Google Gemini AI** - AI chat assistant
 - **html2canvas** - Screenshot capture
-- **CSS Modules** - Styling
 
 ## 📁 Project Structure
 
@@ -91,9 +106,12 @@ MIBR_REVIEW_Viewer/
 ├── types.ts                # TypeScript type definitions
 ├── index.tsx               # Application entry point
 ├── index.html              # HTML template
+├── index.css               # Custom CSS utilities
+├── main.cjs                # Electron main process
 ├── package.json            # Dependencies and scripts
 ├── tsconfig.json           # TypeScript configuration
-└── vite.config.ts          # Vite configuration
+├── vite.config.ts          # Vite configuration
+└── tailwind.config.js      # Tailwind configuration
 ```
 
 ## 🎨 Usage
@@ -121,3 +139,7 @@ Contributions, issues, and feature requests are welcome!
 ## 📧 Contact
 
 For questions or support, please open an issue in the repository.
+
+---
+
+View original AI Studio app: https://ai.studio/apps/temp/1
