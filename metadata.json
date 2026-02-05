@@ -1,0 +1,4 @@
+{
+  "name": "MIBR - Multi Interface Browser Reviewer",
+  "description": "A developer tool designed to view three viewports (Desktop, Tablet, Mobile) simultaneously to speed up responsiveness reviews. Features synchronized scrolling, device simulation, and an integrated Gemini AI assistant for responsive design debugging. Works best with localhost or frame-allowable websites."
+}
