@@ -1,9 +1,14 @@
 import React, { useState, useRef } from "react";
 import html2canvas from "html2canvas";
+import "./index.css";
 import { DEVICES, DEFAULT_URL } from "./constants";
 import DeviceFrame from "./components/DeviceFrame";
-import AIChat from "./components/AIChat";
 import { DeviceConfig, ThemeType } from "./types";
+
+// Check if running in Electron
+const isElectron =
+  typeof window !== "undefined" &&
+  window.navigator.userAgent.toLowerCase().includes("electron");
 
 function App() {
   const [urlInput, setUrlInput] = useState(DEFAULT_URL);
@@ -14,6 +19,7 @@ function App() {
   const [showDisclaimer, setShowDisclaimer] = useState(true);
   const [theme, setTheme] = useState<ThemeType>("cyber");
   const [isFlashVisible, setIsFlashVisible] = useState(false);
+  const [viewMode, setViewMode] = useState<"multi" | "dashboard">("dashboard");
 
   // Custom Devices State
   const [devices, setDevices] = useState<DeviceConfig[]>(DEVICES);
@@ -68,12 +74,30 @@ function App() {
     setTimeout(() => setIsFlashVisible(false), 500);
 
     try {
+      // Get all webviews/iframes and temporarily hide them for clean frame capture
+      const frames = contentRef.current.querySelectorAll("webview, iframe");
+      const originalDisplays: string[] = [];
+
+      frames.forEach((frame, i) => {
+        originalDisplays[i] = (frame as HTMLElement).style.display;
+        (frame as HTMLElement).style.visibility = "hidden";
+      });
+
       const canvas = await html2canvas(contentRef.current, {
         backgroundColor: theme === "cyber" ? "#050202" : "#f8f9fa",
         ignoreElements: (element) =>
-          element.classList.contains("exclude-screenshot"),
+          element.classList.contains("exclude-screenshot") ||
+          element.tagName.toLowerCase() === "webview" ||
+          element.tagName.toLowerCase() === "iframe",
         useCORS: true,
         logging: false,
+        scale: 2, // Higher quality
+      });
+
+      // Restore frames visibility
+      frames.forEach((frame, i) => {
+        (frame as HTMLElement).style.visibility =
+          originalDisplays[i] || "visible";
       });
 
       const image = canvas.toDataURL("image/png");
@@ -84,7 +108,7 @@ function App() {
     } catch (err) {
       console.error("Screenshot failed:", err);
       alert(
-        "Screenshot failed. Note: Cross-origin iframes may appear blank due to browser security policies.",
+        "Screenshot failed. For full screenshots with page content, use system screenshot (Win+Shift+S or PrtSc).",
       );
     }
   };
@@ -108,38 +132,40 @@ function App() {
     });
   };
 
-  // Styles based on Theme
+  // Styles based on Theme - Enhanced Glassmorphism
   const isCyber = theme === "cyber";
   const themeStyles = {
-    bg: isCyber ? "bg-[#050202]" : "bg-[#f8f9fa]",
+    bg: isCyber ? "bg-[#0a0505]" : "bg-[#f8f9fa]",
     headerBg: isCyber
-      ? "bg-white/5 border-white/10"
-      : "bg-white/30 border-white/30 shadow-sm backdrop-blur-xl", // More translucent for glass effect
+      ? "glass-dark border-red-500/20 shadow-[0_4px_30px_rgba(220,38,38,0.1)]"
+      : "bg-white/30 border-white/30 shadow-sm backdrop-blur-xl",
     headerText: isCyber ? "text-white" : "text-slate-800",
     logoBox: isCyber
-      ? "bg-gradient-to-br from-red-600/30 to-black border-red-500/40 shadow-[0_0_15px_rgba(220,38,38,0.3)]"
+      ? "bg-gradient-to-br from-red-600/40 to-red-900/30 border-red-500/50 shadow-[0_0_30px_rgba(220,38,38,0.4)] animate-pulse-glow"
       : "bg-gradient-to-br from-blue-500/20 to-blue-600/10 border-blue-200 shadow-lg shadow-blue-500/10",
-    logoIcon: isCyber ? "text-white" : "text-blue-600",
+    logoIcon: isCyber
+      ? "text-red-100 drop-shadow-[0_0_8px_rgba(220,38,38,0.5)]"
+      : "text-blue-600",
     logoText: isCyber
-      ? "from-red-100 via-red-300 to-red-100"
+      ? "from-red-200 via-red-400 to-red-200 text-glow-red"
       : "from-blue-700 via-blue-500 to-blue-800",
     inputBg: isCyber
-      ? "bg-black/30 border-white/10 text-red-50 focus:bg-black/50 focus:border-red-500/30"
+      ? "bg-black/40 border-red-500/20 text-red-50 placeholder-red-200/30 focus:bg-black/60 focus:border-red-500/40 focus:shadow-[0_0_20px_rgba(220,38,38,0.15)] backdrop-blur-xl"
       : "bg-white/40 border-slate-300/50 text-slate-800 focus:bg-white/60 focus:border-blue-400 shadow-inner backdrop-blur-md",
     toolbarBtn: isCyber
-      ? "bg-white/5 border-white/10 hover:bg-white/10 hover:text-red-200 text-white/60"
+      ? "bg-red-950/30 border-red-500/20 hover:bg-red-900/40 hover:border-red-500/40 hover:shadow-[0_0_15px_rgba(220,38,38,0.2)] text-red-100/60 hover:text-red-100 backdrop-blur-md transition-all"
       : "bg-white/40 border-white/40 hover:bg-white/70 hover:border-blue-300 hover:text-blue-700 text-slate-600 shadow-sm backdrop-blur-md",
     activeBtn: isCyber
-      ? "bg-red-600/20 text-red-200 border-red-500/30"
+      ? "bg-red-600/30 text-red-100 border-red-500/50 shadow-[0_0_20px_rgba(220,38,38,0.3)]"
       : "bg-blue-100/60 text-blue-700 border-blue-400/50",
     modalBg: isCyber
-      ? "bg-zinc-900 border-white/10 text-white"
+      ? "glass-card border-red-500/30 text-white shadow-[0_0_60px_rgba(220,38,38,0.15)]"
       : "bg-white/70 border-white/40 text-slate-800 shadow-xl backdrop-blur-xl",
     modalInput: isCyber
-      ? "bg-black/50 border-white/10 text-white"
+      ? "bg-black/50 border-red-500/20 text-red-50 focus:border-red-500/40 backdrop-blur-md"
       : "bg-white/50 border-slate-200 text-slate-800",
     blobColors: isCyber
-      ? ["bg-red-900/20", "bg-rose-900/20", "bg-orange-900/10"]
+      ? ["bg-red-600/30", "bg-rose-700/25", "bg-red-800/20"]
       : ["bg-blue-300/20", "bg-indigo-300/20", "bg-cyan-300/10"],
   };
 
@@ -172,16 +198,16 @@ function App() {
 
       {/* Navigation Bar */}
       <header
-        className={`h-16 flex items-center px-6 justify-between z-20 shrink-0 border-b transition-colors duration-300 ${themeStyles.headerBg}`}
+        className={`h-[80px] flex flex-row items-center px-[4rem]! justify-between z-20 shrink-0 border-b transition-all duration-300 ${themeStyles.headerBg}`}
       >
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-8">
           {/* Logo MIBR */}
           <div
             className="flex items-center gap-3 select-none group cursor-pointer"
             onClick={() => window.location.reload()}
           >
             <div
-              className={`w-10 h-10 border rounded-lg flex items-center justify-center backdrop-blur-md relative overflow-hidden transition-all ${themeStyles.logoBox}`}
+              className={`w-11 h-11 border rounded-xl flex items-center justify-center backdrop-blur-md relative overflow-hidden transition-all ${themeStyles.logoBox}`}
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -215,18 +241,18 @@ function App() {
           </div>
 
           {/* URL Input */}
-          <form onSubmit={handleUrlSubmit} className="flex items-center">
+          <form onSubmit={handleUrlSubmit} className="flex items-center h-24">
             <div className="relative group">
               <div
-                className={`absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none transition-colors ${isCyber ? "text-red-200/40" : "text-slate-400"}`}
+                className={`absolute inset-y-0 left-2 pl-4 flex items-center pointer-events-none transition-colors ${isCyber ? "text-red-200/40" : "text-slate-400"}`}
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
+                  width="18"
+                  height="18"
                   viewBox="0 0 24 24"
                   fill="none"
-                  stroke="currentColor"
+                  stroke="white"
                   strokeWidth="2"
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -239,7 +265,7 @@ function App() {
                 type="text"
                 value={urlInput}
                 onChange={(e) => setUrlInput(e.target.value)}
-                className={`border rounded-xl py-2 pl-10 pr-4 w-[400px] text-sm focus:outline-none focus:ring-1 transition-all font-mono ${themeStyles.inputBg}`}
+                className={`border rounded-md py-2.5 pl-8! pr-4 w-[450px] text-sm h-9 focus:outline-none focus:ring-1 transition-all font-mono ${themeStyles.inputBg}`}
                 placeholder="Enter URL..."
               />
             </div>
@@ -252,13 +278,13 @@ function App() {
           <div className="flex items-center gap-2 mr-2">
             <button
               onClick={() => setShowAddDeviceModal(true)}
-              className={`p-2 rounded-lg transition-all ${themeStyles.toolbarBtn}`}
+              className={`p-2.5 rounded-lg transition-all ${themeStyles.toolbarBtn}`}
               title="Add Custom Device"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
+                width="18"
+                height="18"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -272,13 +298,13 @@ function App() {
             </button>
             <button
               onClick={handleScreenshot}
-              className={`p-2 rounded-lg transition-all ${themeStyles.toolbarBtn}`}
-              title="Take Screenshot (Container)"
+              className={`p-2.5 rounded-lg transition-all ${themeStyles.toolbarBtn}`}
+              title="Screenshot Frames (use Win+Shift+S for full capture)"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
+                width="18"
+                height="18"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -292,7 +318,7 @@ function App() {
             </button>
             <button
               onClick={toggleTheme}
-              className={`p-2 rounded-lg transition-all ${themeStyles.toolbarBtn}`}
+              className={`p-2.5 rounded-lg transition-all ${themeStyles.toolbarBtn}`}
               title={isCyber ? "Switch to Lab Mode" : "Switch to Cyber Mode"}
             >
               {isCyber ? (
@@ -334,11 +360,9 @@ function App() {
               )}
             </button>
           </div>
-
           <div
             className={`h-6 w-px mx-1 ${isCyber ? "bg-white/10" : "bg-slate-300"}`}
           ></div>
-
           {/* Zoom Controls */}
           <div
             className={`flex items-center rounded-lg border p-0.5 backdrop-blur-sm ${isCyber ? "bg-white/5 border-white/10" : "bg-white/40 border-white/40"}`}
@@ -386,11 +410,9 @@ function App() {
               </svg>
             </button>
           </div>
-
           <div
             className={`h-6 w-px mx-1 ${isCyber ? "bg-white/10" : "bg-slate-300"}`}
           ></div>
-
           {/* Sync Scroll Toggle */}
           <button
             onClick={() => setIsSyncScrolling(!isSyncScrolling)}
@@ -414,7 +436,6 @@ function App() {
             </svg>
             Sync
           </button>
-
           {/* AI Toggle */}
           {/* <button
             onClick={() => setIsChatOpen(!isChatOpen)}
@@ -453,27 +474,27 @@ function App() {
         {/* Glass Info Box */}
         {showDisclaimer && (
           <div
-            className={`fixed bottom-6 left-6 max-w-sm backdrop-blur-xl border p-5 rounded-2xl shadow-glass z-30 text-xs exclude-screenshot ${isCyber ? "bg-black/40 border-red-500/10 text-white/70" : "bg-white/60 border-white/50 text-slate-600 shadow-xl"}`}
+            className={`fixed bottom-6 left-6 max-w-sm backdrop-blur-2xl border p-5 rounded-2xl z-30 text-xs exclude-screenshot ${isCyber ? "bg-black/50 border-red-500/30 text-red-100/80 shadow-[0_8px_40px_rgba(0,0,0,0.5),0_0_30px_rgba(220,38,38,0.1)]" : "bg-white/60 border-white/50 text-slate-600 shadow-xl"}`}
           >
             <div
-              className={`flex justify-between items-start mb-3 border-b pb-2 ${isCyber ? "border-white/5" : "border-slate-300/30"}`}
+              className={`flex justify-between items-start mb-3 border-b pb-2 ${isCyber ? "border-red-500/20" : "border-slate-300/30"}`}
             >
               <strong
-                className={`flex items-center gap-2 ${isCyber ? "text-red-100" : "text-blue-700"}`}
+                className={`flex items-center gap-2 ${isCyber ? "text-red-100 text-glow-red" : "text-blue-700"}`}
               >
                 <span className="relative flex h-2 w-2">
                   <span
-                    className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isCyber ? "bg-red-400" : "bg-blue-400"}`}
+                    className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isCyber ? "bg-red-500" : "bg-blue-400"}`}
                   ></span>
                   <span
-                    className={`relative inline-flex rounded-full h-2 w-2 ${isCyber ? "bg-red-600" : "bg-blue-600"}`}
+                    className={`relative inline-flex rounded-full h-2 w-2 ${isCyber ? "bg-red-500 shadow-[0_0_10px_rgba(220,38,38,0.8)]" : "bg-blue-600"}`}
                   ></span>
                 </span>
                 Sec Environment
               </strong>
               <button
                 onClick={() => setShowDisclaimer(false)}
-                className={`transition-colors rounded-full p-1 w-5 h-5 flex items-center justify-center ${isCyber ? "bg-white/5 hover:bg-white/10 hover:text-red-400" : "bg-slate-200/50 hover:bg-slate-200 hover:text-blue-600"}`}
+                className={`transition-all rounded-full p-1 w-5 h-5 flex items-center justify-center ${isCyber ? "bg-red-950/50 border border-red-500/30 hover:bg-red-900/50 hover:text-red-300 hover:shadow-[0_0_10px_rgba(220,38,38,0.3)]" : "bg-slate-200/50 hover:bg-slate-200 hover:text-blue-600"}`}
               >
                 ✕
               </button>
@@ -481,11 +502,11 @@ function App() {
             <p className="mb-2 leading-relaxed">
               This tool uses{" "}
               <code
-                className={`px-1 py-0.5 rounded font-mono border ${isCyber ? "bg-red-900/30 text-red-100 border-red-500/10" : "bg-blue-100/50 text-blue-700 border-blue-200"}`}
+                className={`px-1.5 py-0.5 rounded font-mono border ${isCyber ? "bg-red-950/50 text-red-200 border-red-500/30 shadow-[0_0_10px_rgba(220,38,38,0.1)]" : "bg-blue-100/50 text-blue-700 border-blue-200"}`}
               >
-                iframes
-              </code>
-              . Strict X-Frame-Options or CORS may block content.
+                webviews
+              </code>{" "}
+              with shared session. Login once, all devices sync.
             </p>
           </div>
         )}

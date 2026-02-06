@@ -19,6 +19,12 @@ dist-ssr
 .env.test.local
 .env.production.local
 
+# Electron build output
+release/
+
+# Claude Code
+.claude/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

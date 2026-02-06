@@ -1,6 +1,12 @@
 import React, { useState, useRef, useEffect } from "react";
 import { DeviceConfig, ThemeType } from "../types";
 
+// Check if running in Electron by testing if webview is a valid element
+const isElectron = (() => {
+  const el = document.createElement('webview');
+  return el.constructor.name !== 'HTMLUnknownElement';
+})();
+
 interface DeviceFrameProps {
   device: DeviceConfig;
   url: string;
@@ -25,8 +31,51 @@ const DeviceFrame: React.FC<DeviceFrameProps> = ({
   theme,
 }) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const webviewRef = useRef<any>(null);
   const [isRotated, setIsRotated] = useState(false);
   const [loading, setLoading] = useState(true);
+  const loadedUrlRef = useRef<string>("");
+  const listenersAttachedRef = useRef(false);
+
+  // Reset loading when URL changes, with timeout fallback
+  useEffect(() => {
+    if (url !== loadedUrlRef.current) {
+      setLoading(true);
+
+      // Fallback timeout - stop loading after 15s max
+      const timeout = setTimeout(() => {
+        loadedUrlRef.current = url;
+        setLoading(false);
+      }, 15000);
+
+      return () => clearTimeout(timeout);
+    }
+  }, [url]);
+
+  // Callback ref to attach event listeners when webview is mounted
+  const setWebviewRef = (element: any) => {
+    if (element && isElectron && element !== webviewRef.current) {
+      webviewRef.current = element;
+
+      // Only attach listeners once
+      if (!listenersAttachedRef.current) {
+        listenersAttachedRef.current = true;
+
+        element.addEventListener("did-stop-loading", () => {
+          loadedUrlRef.current = element.src || url;
+          setLoading(false);
+        });
+
+        element.addEventListener("did-fail-load", (_event: any, errorCode: number) => {
+          // Ignore ERR_ABORTED (-3) which happens on navigation
+          if (errorCode !== -3) {
+            loadedUrlRef.current = element.src || url;
+            setLoading(false);
+          }
+        });
+      }
+    }
+  };
 
   // Editing State
   const [isEditing, setIsEditing] = useState(false);
@@ -44,55 +93,64 @@ const DeviceFrame: React.FC<DeviceFrameProps> = ({
   const isCyber = theme === "cyber";
 
   const styles = {
+    // Label styles - glassmorphic pill
     labelBg: isCyber
-      ? "bg-zinc-900/60 border-white/10 text-white/70"
-      : "bg-white/40 border-white/30 text-slate-600 shadow-sm backdrop-blur-md", // More transparent for glass effect
+      ? "bg-black/40 border-red-500/30 text-red-100/80 backdrop-blur-xl shadow-[0_4px_20px_rgba(0,0,0,0.4),0_0_15px_rgba(220,38,38,0.1)]"
+      : "bg-white/40 border-white/30 text-slate-600 shadow-sm backdrop-blur-md",
     labelEditing: isCyber
-      ? "bg-red-900/40 border-red-500/50"
+      ? "bg-red-950/60 border-red-500/50 shadow-[0_0_25px_rgba(220,38,38,0.2)]"
       : "bg-blue-100/80 border-blue-400",
     labelHover: isCyber
-      ? "group-hover:bg-red-900/20 group-hover:border-red-500/20"
+      ? "group-hover:bg-red-950/40 group-hover:border-red-500/40 group-hover:shadow-[0_0_20px_rgba(220,38,38,0.15)]"
       : "group-hover:bg-white/60 group-hover:border-blue-300/50",
     labelText: isCyber
-      ? "text-white group-hover:text-red-100"
+      ? "text-red-100 group-hover:text-red-50"
       : "text-slate-700 group-hover:text-blue-700",
     labelDivider: isCyber
-      ? "bg-white/10 group-hover:bg-red-500/20"
+      ? "bg-red-500/20 group-hover:bg-red-500/30"
       : "bg-slate-400/20 group-hover:bg-blue-400/20",
     labelMeta: isCyber
-      ? "text-white/40 group-hover:text-red-300/40"
+      ? "text-red-200/50 group-hover:text-red-200/70"
       : "text-slate-500/70 group-hover:text-blue-500",
 
+    // Frame base - glassmorphic container
     frameBase: isCyber
-      ? "backdrop-blur-md shadow-cyber ring-1 ring-white/10"
-      : "backdrop-blur-xl shadow-lg ring-1 ring-white/40", // Stronger blur for light mode
+      ? "backdrop-blur-xl shadow-[0_8px_40px_rgba(0,0,0,0.6),0_0_60px_rgba(220,38,38,0.1)] ring-1 ring-red-500/20"
+      : "backdrop-blur-xl shadow-lg ring-1 ring-white/40",
 
     frameDesktop: isCyber
-      ? "border-white/10 bg-gradient-to-b from-zinc-800/80 to-black/90"
-      : "border-white/50 bg-gradient-to-br from-white/40 via-white/20 to-white/5", // High transparency for frosted glass
+      ? "border-red-500/20 bg-gradient-to-b from-red-950/30 via-black/60 to-black/80"
+      : "border-white/50 bg-gradient-to-br from-white/40 via-white/20 to-white/5",
 
-    frameMobile: isCyber ? "border-[#1a1a1a]" : "border-[#2d2d2d]", // Keep mobile bezels dark for realism
+    frameMobile: isCyber
+      ? "border-[#1a0a0a] shadow-[inset_0_0_20px_rgba(220,38,38,0.1)]"
+      : "border-[#2d2d2d]",
 
     indicatorPrimary: isCyber
-      ? "bg-red-500 shadow-[0_0_10px_red]"
+      ? "bg-red-500 shadow-[0_0_15px_rgba(220,38,38,0.8),0_0_30px_rgba(220,38,38,0.4)] animate-pulse"
       : "bg-blue-500 shadow-[0_0_10px_rgba(37,99,235,0.5)]",
-    indicatorNormal: isCyber ? "bg-zinc-600" : "bg-slate-300",
+    indicatorNormal: isCyber
+      ? "bg-red-900/50 shadow-[0_0_5px_rgba(220,38,38,0.2)]"
+      : "bg-slate-300",
 
-    iconHover: isCyber ? "hover:text-red-400" : "hover:text-blue-600",
+    iconHover: isCyber
+      ? "hover:text-red-400 hover:drop-shadow-[0_0_8px_rgba(220,38,38,0.5)] transition-all"
+      : "hover:text-blue-600",
 
     input: isCyber
-      ? "bg-black/50 border-red-500/30 text-red-100 focus:border-red-400"
+      ? "bg-black/60 border-red-500/30 text-red-100 focus:border-red-500/50 focus:shadow-[0_0_15px_rgba(220,38,38,0.2)] backdrop-blur-md"
       : "bg-white/50 border-blue-400/30 text-blue-900 focus:border-blue-500 backdrop-blur-sm",
 
     loadingBg: isCyber
-      ? "bg-black/80 text-red-100/50 border-red-900/30"
+      ? "bg-black/90 text-red-200/60 border-red-500/20 backdrop-blur-xl"
       : "bg-white/60 text-blue-900/50 border-white/40",
     loadingSpinner: isCyber
-      ? "border-red-900/30 border-t-red-500"
+      ? "border-red-900/40 border-t-red-500 shadow-[0_0_10px_rgba(220,38,38,0.3)]"
       : "border-blue-200 border-t-blue-600",
   };
 
   const handleLoad = () => {
+    loadedUrlRef.current = url;
     setLoading(false);
   };
 
@@ -110,16 +168,27 @@ const DeviceFrame: React.FC<DeviceFrameProps> = ({
   };
 
   useEffect(() => {
-    if (!isSyncing || isPrimary || !iframeRef.current) return;
-    try {
-      const win = iframeRef.current.contentWindow;
-      if (win && syncScrollPosition !== undefined) {
-        const scrollHeight = win.document.body.scrollHeight - win.innerHeight;
-        const targetY = scrollHeight * syncScrollPosition;
-        win.scrollTo(0, targetY);
+    if (!isSyncing || isPrimary) return;
+
+    if (isElectron && webviewRef.current) {
+      // Webview scroll sync via executeJavaScript
+      if (syncScrollPosition !== undefined) {
+        webviewRef.current.executeJavaScript(`
+          const scrollHeight = document.body.scrollHeight - window.innerHeight;
+          window.scrollTo(0, scrollHeight * ${syncScrollPosition});
+        `).catch(() => {});
       }
-    } catch (e) {
-      // Cross-origin blocked
+    } else if (iframeRef.current) {
+      try {
+        const win = iframeRef.current.contentWindow;
+        if (win && syncScrollPosition !== undefined) {
+          const scrollHeight = win.document.body.scrollHeight - win.innerHeight;
+          const targetY = scrollHeight * syncScrollPosition;
+          win.scrollTo(0, targetY);
+        }
+      } catch (e) {
+        // Cross-origin blocked
+      }
     }
   }, [syncScrollPosition, isSyncing, isPrimary]);
 
@@ -287,14 +356,23 @@ const DeviceFrame: React.FC<DeviceFrameProps> = ({
         <div
           className={`w-full h-full overflow-hidden bg-white ${isMobile ? "rounded-[2.2rem]" : "rounded-[0.5rem]"}`}
         >
-          <iframe
-            ref={iframeRef}
-            src={url}
-            className="w-full h-full border-0"
-            onLoad={handleLoad}
-            title={`${device.name} view`}
-            sandbox="allow-same-origin allow-scripts allow-forms allow-popups"
-          />
+          {isElectron ? (
+            <webview
+              ref={setWebviewRef}
+              src={url}
+              partition="persist:shared"
+              allowpopups="true"
+              style={{ width: "100%", height: "100%", border: "none" }}
+            />
+          ) : (
+            <iframe
+              ref={iframeRef}
+              src={url}
+              className="w-full h-full border-0"
+              onLoad={handleLoad}
+              title={`${device.name} view`}
+            />
+          )}
         </div>
 
         {/* Glass Reflection */}

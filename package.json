@@ -2,22 +2,107 @@
   "name": "mibr-review-viewer",
   "private": true,
   "version": "0.0.1",
+  "description": "Multi Interface Browser Reviewer - Preview websites across multiple devices simultaneously",
+  "author": "MIBR Team",
   "type": "module",
+  "main": "main.cjs",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --port 9898",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "electron": "electron .",
+    "electron-dev": "concurrently \"npm run dev\" \"wait-on https://localhost:9898 --insecure && electron .\"",
+    "build:vite": "vite build",
+    "build:electron": "npm run build:vite && electron-builder",
+    "build:portable": "npm run build:vite && electron-builder --win portable",
+    "build:installer": "npm run build:vite && electron-builder --win nsis",
+    "build:msi": "npm run build:vite && electron-builder --win msi",
+    "build:win": "npm run build:vite && electron-builder --win",
+    "build:mac": "npm run build:vite && electron-builder --mac",
+    "package": "npm run build && electron-builder"
   },
   "dependencies": {
-    "react": "^19.2.4",
     "@google/genai": "^1.40.0",
-    "react-dom": "^19.2.4",
-    "html2canvas": "1.4.1"
+    "html2canvas": "1.4.1",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
   },
   "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.18",
     "@types/node": "^22.14.0",
+    "@vitejs/plugin-basic-ssl": "^2.1.4",
     "@vitejs/plugin-react": "^5.0.0",
+    "autoprefixer": "^10.4.24",
+    "concurrently": "^8.2.2",
+    "electron": "^28.2.0",
+    "electron-builder": "^24.13.3",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.18",
     "typescript": "~5.8.2",
-    "vite": "^6.2.0"
+    "vite": "^6.2.0",
+    "wait-on": "^7.2.0"
+  },
+  "build": {
+    "appId": "com.mibr.review-viewer",
+    "productName": "MIBR Review Viewer",
+    "files": [
+      "dist/**/*",
+      "main.cjs",
+      "main.js",
+      "package.json"
+    ],
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "icon": "build/icon.ico",
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "msi",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "${productName}-${version}-${os}-${arch}.${ext}"
+    },
+    "msi": {
+      "artifactName": "${productName}-${version}.${ext}"
+    },
+    "mac": {
+      "target": [
+        "dmg"
+      ],
+      "category": "public.app-category.developer-tools",
+      "artifactName": "${productName}-${version}-mac.${ext}"
+    },
+    "dmg": {
+      "title": "${productName}",
+      "artifactName": "${productName}-${version}.${ext}"
+    },
+    "portable": {
+      "artifactName": "${productName}-${version}-Portable.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "artifactName": "${productName}-Setup-${version}.${ext}",
+      "shortcutName": "${productName}",
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
   }
 }
