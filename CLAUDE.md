@@ -79,14 +79,18 @@ All Electron webviews use `partition: "persist:shared"` so login sessions are sh
 
 Tailwind CSS v4 via `@tailwindcss/postcss` plugin (not classic config-based). The `tailwind.config.js` extends with custom glass colors, shadows, and animations but Tailwind v4 primarily uses CSS-based config via `@import "tailwindcss"` in `index.css`.
 
-Single **BMW-inspired sporty futuristic** theme — deep black (`#0a0a0a`) with BMW Blue (`#1C69D4`) and electric cyan (`#00D4FF`) accents, silver/metallic (`#C0C0C0`, `#8A8A8A`) for muted text. No theme switching — all styling is direct inline classes.
+Single **neon red/pink** dark theme — deep black (`#05060a`) with neon red (`#ff2b3d`), pink (`#ff4d6d`) accents, silver/metallic (`#C0C0C0`, `#8A8A8A`) for muted text. No theme switching — all styling is direct inline classes. Fonts: Orbitron (headings), Rajdhani (body), JetBrains Mono (code).
 
-Custom CSS utilities in `index.css`: `.glass`, `.glass-dark`, `.glass-card` (blue-tinted glassmorphism), `.carbon-grid` (carbon fiber background), `.glow-blue-*`, `.text-glow-blue` (blue neon glow effects), `.animate-blob`, `.animate-pulse-glow` (animations).
+Custom CSS utilities in `index.css`: `.glass`, `.glass-dark`, `.glass-card` (red-tinted glassmorphism), `.carbon-grid` (carbon fiber background), `.glow-blue-*`, `.text-glow-blue` (neon glow effects), `.animate-blob`, `.animate-pulse-glow` (animations).
 
 ## Key Patterns
 
-- All state lives in `App.tsx` (URL, devices, scale, scroll sync). No state management library.
-- Device configs are mutable at runtime — users can add custom devices and resize non-mobile devices inline.
+- All state lives in `App.tsx` (URL, devices, scale, scroll sync, viewMode). No state management library.
+- Two view modes: `"multi"` (side-by-side frames) and `"dashboard"` (default).
+- Device configs are mutable at runtime — users can add custom devices and resize non-mobile devices inline. Mobile devices are rotation-only (not resizable).
+- URL input auto-prepends `https://` if no protocol specified.
 - Screenshot uses `html2canvas` but hides webviews/iframes (they render as blank), so captures only the frame chrome. The UI suggests `Win+Shift+S` for full captures.
-- Mobile devices get a phone-style frame with notch/dynamic island; desktop/tablet get minimal border with corner bracket accents.
+- Mobile devices get a phone-style frame with notch/dynamic island (`border-12`, `rounded-[3rem]`); desktop/tablet get minimal border with corner bracket accents.
+- Sync scrolling: primary device (Desktop Large) broadcasts scroll percentage to secondary devices. In Electron uses `webviewRef.executeJavaScript()`, in browser uses `iframe.contentWindow.scrollTo()` (may fail cross-origin).
+- DeviceFrame has a 15-second loading timeout fallback — reveals content even if webview hasn't fired its load event.
 
