@@ -5,7 +5,6 @@ export default {
     "./src/**/*.{js,ts,jsx,tsx}",
     "./**/*.{js,ts,jsx,tsx}",
   ],
-  darkMode: "class",
   theme: {
     extend: {
       fontFamily: {
@@ -13,6 +12,13 @@ export default {
         mono: ["JetBrains Mono", "monospace"],
       },
       colors: {
+        bmw: {
+          blue: "#1C69D4",
+          cyan: "#00D4FF",
+          black: "#0a0a0a",
+          silver: "#C0C0C0",
+          "silver-dark": "#8A8A8A",
+        },
         glass: {
           surface: "rgba(255, 255, 255, 0.03)",
           border: "rgba(255, 255, 255, 0.08)",
@@ -24,10 +30,8 @@ export default {
       boxShadow: {
         glass: "0 8px 32px 0 rgba(0, 0, 0, 0.37)",
         "glass-sm": "0 4px 16px 0 rgba(0, 0, 0, 0.2)",
-        glow: "0 0 20px rgba(220, 38, 38, 0.3)",
-        cyber:
-          "0 0 30px -5px rgba(220, 38, 38, 0.15), 0 0 10px -2px rgba(220, 38, 38, 0.1)",
-        lab: "0 10px 40px -10px rgba(0,0,0,0.1)",
+        glow: "0 0 20px rgba(28, 105, 212, 0.3)",
+        bmw: "0 0 30px -5px rgba(28, 105, 212, 0.15), 0 0 10px -2px rgba(0, 212, 255, 0.1)",
       },
       animation: {
         blob: "blob 10s infinite",

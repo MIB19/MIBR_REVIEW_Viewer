@@ -3,7 +3,7 @@ import html2canvas from "html2canvas";
 import "./index.css";
 import { DEVICES, DEFAULT_URL } from "./constants";
 import DeviceFrame from "./components/DeviceFrame";
-import { DeviceConfig, ThemeType } from "./types";
+import { DeviceConfig } from "./types";
 
 // Check if running in Electron
 const isElectron =
@@ -15,9 +15,8 @@ function App() {
   const [activeUrl, setActiveUrl] = useState(DEFAULT_URL);
   const [scale, setScale] = useState(0.6);
   const [isSyncScrolling, setIsSyncScrolling] = useState(false);
-  const [isChatOpen, setIsChatOpen] = useState(false);
+
   const [showDisclaimer, setShowDisclaimer] = useState(true);
-  const [theme, setTheme] = useState<ThemeType>("cyber");
   const [isFlashVisible, setIsFlashVisible] = useState(false);
   const [viewMode, setViewMode] = useState<"multi" | "dashboard">("dashboard");
 
@@ -53,28 +52,13 @@ function App() {
     );
   };
 
-  const toggleTheme = () => {
-    const newTheme = theme === "cyber" ? "lab" : "cyber";
-    setTheme(newTheme);
-    // Update body styling via DOM for consistency outside React root if needed
-    if (newTheme === "lab") {
-      document.body.style.backgroundColor = "#f8f9fa";
-      document.body.classList.add("light");
-    } else {
-      document.body.style.backgroundColor = "#050202";
-      document.body.classList.remove("light");
-    }
-  };
-
   const handleScreenshot = async () => {
     if (!contentRef.current) return;
 
-    // Visual flash effect
     setIsFlashVisible(true);
     setTimeout(() => setIsFlashVisible(false), 500);
 
     try {
-      // Get all webviews/iframes and temporarily hide them for clean frame capture
       const frames = contentRef.current.querySelectorAll("webview, iframe");
       const originalDisplays: string[] = [];
 
@@ -84,17 +68,16 @@ function App() {
       });
 
       const canvas = await html2canvas(contentRef.current, {
-        backgroundColor: theme === "cyber" ? "#050202" : "#f8f9fa",
+        backgroundColor: "#0a0a0a",
         ignoreElements: (element) =>
           element.classList.contains("exclude-screenshot") ||
           element.tagName.toLowerCase() === "webview" ||
           element.tagName.toLowerCase() === "iframe",
         useCORS: true,
         logging: false,
-        scale: 2, // Higher quality
+        scale: 2,
       });
 
-      // Restore frames visibility
       frames.forEach((frame, i) => {
         (frame as HTMLElement).style.visibility =
           originalDisplays[i] || "visible";
@@ -132,83 +115,39 @@ function App() {
     });
   };
 
-  // Styles based on Theme - Enhanced Glassmorphism
-  const isCyber = theme === "cyber";
-  const themeStyles = {
-    bg: isCyber ? "bg-[#0a0505]" : "bg-[#f8f9fa]",
-    headerBg: isCyber
-      ? "glass-dark border-red-500/20 shadow-[0_4px_30px_rgba(220,38,38,0.1)]"
-      : "bg-white/30 border-white/30 shadow-sm backdrop-blur-xl",
-    headerText: isCyber ? "text-white" : "text-slate-800",
-    logoBox: isCyber
-      ? "bg-gradient-to-br from-red-600/40 to-red-900/30 border-red-500/50 shadow-[0_0_30px_rgba(220,38,38,0.4)] animate-pulse-glow"
-      : "bg-gradient-to-br from-blue-500/20 to-blue-600/10 border-blue-200 shadow-lg shadow-blue-500/10",
-    logoIcon: isCyber
-      ? "text-red-100 drop-shadow-[0_0_8px_rgba(220,38,38,0.5)]"
-      : "text-blue-600",
-    logoText: isCyber
-      ? "from-red-200 via-red-400 to-red-200 text-glow-red"
-      : "from-blue-700 via-blue-500 to-blue-800",
-    inputBg: isCyber
-      ? "bg-black/40 border-red-500/20 text-red-50 placeholder-red-200/30 focus:bg-black/60 focus:border-red-500/40 focus:shadow-[0_0_20px_rgba(220,38,38,0.15)] backdrop-blur-xl"
-      : "bg-white/40 border-slate-300/50 text-slate-800 focus:bg-white/60 focus:border-blue-400 shadow-inner backdrop-blur-md",
-    toolbarBtn: isCyber
-      ? "bg-red-950/30 border-red-500/20 hover:bg-red-900/40 hover:border-red-500/40 hover:shadow-[0_0_15px_rgba(220,38,38,0.2)] text-red-100/60 hover:text-red-100 backdrop-blur-md transition-all"
-      : "bg-white/40 border-white/40 hover:bg-white/70 hover:border-blue-300 hover:text-blue-700 text-slate-600 shadow-sm backdrop-blur-md",
-    activeBtn: isCyber
-      ? "bg-red-600/30 text-red-100 border-red-500/50 shadow-[0_0_20px_rgba(220,38,38,0.3)]"
-      : "bg-blue-100/60 text-blue-700 border-blue-400/50",
-    modalBg: isCyber
-      ? "glass-card border-red-500/30 text-white shadow-[0_0_60px_rgba(220,38,38,0.15)]"
-      : "bg-white/70 border-white/40 text-slate-800 shadow-xl backdrop-blur-xl",
-    modalInput: isCyber
-      ? "bg-black/50 border-red-500/20 text-red-50 focus:border-red-500/40 backdrop-blur-md"
-      : "bg-white/50 border-slate-200 text-slate-800",
-    blobColors: isCyber
-      ? ["bg-red-600/30", "bg-rose-700/25", "bg-red-800/20"]
-      : ["bg-blue-300/20", "bg-indigo-300/20", "bg-cyan-300/10"],
-  };
-
   return (
-    <div
-      className={`h-screen flex flex-col relative overflow-hidden transition-colors duration-500 ${themeStyles.bg}`}
-    >
-      {/* 0. Flash Overlay for Screenshot */}
+    <div className="h-screen flex flex-col relative overflow-hidden bg-[#05060a]">
+      {/* Flash Overlay for Screenshot */}
       {isFlashVisible && (
         <div className="absolute inset-0 z-50 bg-white animate-flash pointer-events-none"></div>
       )}
 
-      {/* 1. Static Grid Background */}
-      <div
-        className={`absolute inset-0 z-0 pointer-events-none opacity-50 ${isCyber ? "cyber-grid" : "lab-grid"}`}
-      ></div>
+      {/* Carbon Fiber Grid Background */}
+      <div className="absolute inset-0 z-0 pointer-events-none opacity-60 carbon-grid"></div>
 
-      {/* 2. Animated Background Blobs */}
+      {/* Neon Haze + Noise */}
+      <div className="absolute inset-0 z-0 pointer-events-none cyber-haze"></div>
+      <div className="absolute inset-0 z-0 pointer-events-none cyber-noise"></div>
+
+      {/* Scanline */}
+      <div className="absolute inset-0 z-0 pointer-events-none scanline opacity-40"></div>
+
+      {/* Animated Background Blobs — Neon Red/Cyan */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
-        <div
-          className={`absolute top-[-10%] left-[-10%] w-[50rem] h-[50rem] rounded-full mix-blend-screen filter blur-[128px] opacity-40 animate-blob ${themeStyles.blobColors[0]}`}
-        ></div>
-        <div
-          className={`absolute top-[-10%] right-[-10%] w-[40rem] h-[40rem] rounded-full mix-blend-screen filter blur-[128px] opacity-40 animate-blob animation-delay-2000 ${themeStyles.blobColors[1]}`}
-        ></div>
-        <div
-          className={`absolute bottom-[-20%] left-[20%] w-[60rem] h-[60rem] rounded-full mix-blend-screen filter blur-[128px] opacity-30 animate-blob animation-delay-4000 ${themeStyles.blobColors[2]}`}
-        ></div>
+        <div className="absolute top-[-12%] left-[-8%] w-200 h-200 rounded-full mix-blend-screen filter blur-[128px] opacity-45 animate-blob bg-[#ff2b3d]/30"></div>
+        <div className="absolute top-[-8%] right-[-12%] w-180 h-180 rounded-full mix-blend-screen filter blur-[128px] opacity-40 animate-blob animation-delay-2000 bg-[#ff4d6d]/25"></div>
+        <div className="absolute bottom-[-20%] left-[20%] w-240 h-240 rounded-full mix-blend-screen filter blur-[128px] opacity-35 animate-blob animation-delay-4000 bg-[#ff2b3d]/20"></div>
       </div>
 
       {/* Navigation Bar */}
-      <header
-        className={`h-[80px] flex flex-row items-center px-[4rem]! justify-between z-20 shrink-0 border-b transition-all duration-300 ${themeStyles.headerBg}`}
-      >
+      <header className="h-20 flex flex-row items-center px-16! justify-between z-20 shrink-0 border-b glass-dark border-[#ff2b3d]/25 shadow-[0_4px_30px_rgba(255,43,61,0.18)]">
         <div className="flex items-center gap-8">
           {/* Logo MIBR */}
           <div
             className="flex items-center gap-3 select-none group cursor-pointer"
             onClick={() => window.location.reload()}
           >
-            <div
-              className={`w-11 h-11 border rounded-xl flex items-center justify-center backdrop-blur-md relative overflow-hidden transition-all ${themeStyles.logoBox}`}
-            >
+            <div className="w-11 h-11 border rounded-xl flex items-center justify-center backdrop-blur-md relative overflow-hidden transition-all bg-linear-to-br from-[#ff2b3d]/40 to-[#ff4d6d]/20 border-[#ff2b3d]/60 shadow-[0_0_30px_rgba(255,43,61,0.45)] animate-pulse-glow">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
@@ -217,7 +156,7 @@ function App() {
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                className={`${themeStyles.logoIcon} w-6 h-6`}
+                className="text-[#ffe6e9] drop-shadow-[0_0_8px_rgba(255,43,61,0.6)] w-6 h-6"
               >
                 <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
                 <line x1="8" y1="21" x2="16" y2="21" />
@@ -227,14 +166,10 @@ function App() {
               </svg>
             </div>
             <div className="flex flex-col">
-              <span
-                className={`font-bold text-xl tracking-widest text-transparent bg-clip-text bg-gradient-to-r drop-shadow-sm font-mono ${themeStyles.logoText}`}
-              >
+              <span className="font-bold text-xl tracking-widest text-transparent bg-clip-text bg-linear-to-r from-[#ffd6db] via-[#ff4d6d] to-[#ffd6db] text-glow-blue drop-shadow-sm font-mono">
                 MIBR
               </span>
-              <span
-                className={`text-[10px] font-mono tracking-wide -mt-1 ${isCyber ? "text-red-300/60" : "text-blue-400"}`}
-              >
+              <span className="text-[10px] font-mono tracking-wide -mt-1 text-[#ff4d6d]/70">
                 MIB VIEW REVIEWER
               </span>
             </div>
@@ -243,9 +178,7 @@ function App() {
           {/* URL Input */}
           <form onSubmit={handleUrlSubmit} className="flex items-center h-24">
             <div className="relative group">
-              <div
-                className={`absolute inset-y-0 left-2 pl-4 flex items-center pointer-events-none transition-colors ${isCyber ? "text-red-200/40" : "text-slate-400"}`}
-              >
+              <div className="absolute inset-y-0 left-2 pl-4 flex items-center pointer-events-none text-[#ff2b3d]/40">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="18"
@@ -265,7 +198,7 @@ function App() {
                 type="text"
                 value={urlInput}
                 onChange={(e) => setUrlInput(e.target.value)}
-                className={`border rounded-md py-2.5 pl-8! pr-4 w-[450px] text-sm h-9 focus:outline-none focus:ring-1 transition-all font-mono ${themeStyles.inputBg}`}
+                className="border rounded-md py-2.5 pl-8! pr-4 w-112.5 text-sm h-9 focus:outline-none focus:ring-1 transition-all font-mono bg-black/40 border-[#ff2b3d]/25 text-[#ffe6e9] placeholder-[#ff9aa3]/40 focus:bg-black/60 focus:border-[#ff2b3d]/50 focus:shadow-[0_0_20px_rgba(255,43,61,0.25)] backdrop-blur-xl"
                 placeholder="Enter URL..."
               />
             </div>
@@ -274,17 +207,16 @@ function App() {
 
         {/* Toolbar */}
         <div className="flex items-center gap-3">
-          {/* Screenshot & Add Device */}
           <div className="flex items-center gap-2 mr-2">
             <button
               onClick={() => setShowAddDeviceModal(true)}
-              className={`p-2.5 rounded-lg transition-all ${themeStyles.toolbarBtn}`}
+              className="p-2.5! rounded-lg transition-all bg-[#ff2b3d]/10 border border-[#ff2b3d]/25 hover:bg-[#ff2b3d]/20 hover:border-[#ff2b3d]/45 hover:shadow-[0_0_15px_rgba(255,43,61,0.25)] text-[#c9c9c9]/70 hover:text-[#ffe6e9] backdrop-blur-md"
               title="Add Custom Device"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                width="18"
-                height="18"
+                width="20"
+                height="20"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -298,13 +230,13 @@ function App() {
             </button>
             <button
               onClick={handleScreenshot}
-              className={`p-2.5 rounded-lg transition-all ${themeStyles.toolbarBtn}`}
+              className="p-2.5! rounded-lg transition-all bg-[#ff2b3d]/10 border border-[#ff2b3d]/25 hover:bg-[#ff2b3d]/20 hover:border-[#ff2b3d]/45 hover:shadow-[0_0_15px_rgba(255,43,61,0.25)] text-[#c9c9c9]/70 hover:text-[#ffe6e9] backdrop-blur-md"
               title="Screenshot Frames (use Win+Shift+S for full capture)"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                width="18"
-                height="18"
+                width="20"
+                height="20"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -316,60 +248,13 @@ function App() {
                 <circle cx="12" cy="13" r="4" />
               </svg>
             </button>
-            <button
-              onClick={toggleTheme}
-              className={`p-2.5 rounded-lg transition-all ${themeStyles.toolbarBtn}`}
-              title={isCyber ? "Switch to Lab Mode" : "Switch to Cyber Mode"}
-            >
-              {isCyber ? (
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <circle cx="12" cy="12" r="5" />
-                  <line x1="12" y1="1" x2="12" y2="3" />
-                  <line x1="12" y1="21" x2="12" y2="23" />
-                  <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
-                  <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
-                  <line x1="1" y1="12" x2="3" y2="12" />
-                  <line x1="21" y1="12" x2="23" y2="12" />
-                  <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
-                  <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
-                </svg>
-              ) : (
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-                </svg>
-              )}
-            </button>
           </div>
-          <div
-            className={`h-6 w-px mx-1 ${isCyber ? "bg-white/10" : "bg-slate-300"}`}
-          ></div>
+          <div className="h-8 w-px mx-1 bg-white/10"></div>
           {/* Zoom Controls */}
-          <div
-            className={`flex items-center rounded-lg border p-0.5 backdrop-blur-sm ${isCyber ? "bg-white/5 border-white/10" : "bg-white/40 border-white/40"}`}
-          >
+          <div className="flex items-center rounded-full border p-0.5! backdrop-blur-sm bg-white/5 border-white/10">
             <button
               onClick={() => setScale(Math.max(0.2, scale - 0.1))}
-              className={`p-2 rounded-md transition-all ${isCyber ? "hover:bg-white/10 text-white/60 hover:text-red-200" : "hover:bg-white/50 text-slate-500 hover:text-blue-600"}`}
+              className="p-2! rounded-l-full rounded-r-sm transition-all hover:bg-white/10 text-white/60 hover:text-[#ff4d6d]"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -385,14 +270,12 @@ function App() {
                 <path d="M5 12h14" />
               </svg>
             </button>
-            <span
-              className={`text-xs font-mono w-10 text-center font-medium ${isCyber ? "text-white/80" : "text-slate-700"}`}
-            >
+            <span className="text-sm font-mono w-12 text-center font-medium text-white/80">
               {Math.round(scale * 100)}%
             </span>
             <button
               onClick={() => setScale(Math.min(1.5, scale + 0.1))}
-              className={`p-2 rounded-md transition-all ${isCyber ? "hover:bg-white/10 text-white/60 hover:text-red-200" : "hover:bg-white/50 text-slate-500 hover:text-blue-600"}`}
+              className="p-2! rounded-l-sm rounded-r-full transition-all hover:bg-white/10 text-white/60 hover:text-[#ff4d6d]"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -410,14 +293,14 @@ function App() {
               </svg>
             </button>
           </div>
-          <div
-            className={`h-6 w-px mx-1 ${isCyber ? "bg-white/10" : "bg-slate-300"}`}
-          ></div>
+          <div className="h-8 w-px mx-1 bg-white/10"></div>
           {/* Sync Scroll Toggle */}
           <button
             onClick={() => setIsSyncScrolling(!isSyncScrolling)}
-            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all border backdrop-blur-sm ${
-              isSyncScrolling ? themeStyles.activeBtn : themeStyles.toolbarBtn
+            className={`flex items-center gap-2 px-3! py-2! rounded-sm text-xs font-medium transition-all border backdrop-blur-sm ${
+              isSyncScrolling
+                ? "bg-[#ff2b3d]/30 text-[#ffe6e9] border-[#ff2b3d]/55 shadow-[0_0_20px_rgba(255,43,61,0.35)]"
+                : "bg-[#ff2b3d]/10 border-[#ff2b3d]/25 hover:bg-[#ff2b3d]/20 hover:border-[#ff2b3d]/45 hover:shadow-[0_0_15px_rgba(255,43,61,0.25)] text-[#c9c9c9]/70 hover:text-[#ffe6e9] backdrop-blur-md"
             }`}
           >
             <svg
@@ -436,24 +319,12 @@ function App() {
             </svg>
             Sync
           </button>
-          {/* AI Toggle */}
-          {/* <button
-            onClick={() => setIsChatOpen(!isChatOpen)}
-            className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all border backdrop-blur-sm ${
-              isChatOpen 
-              ? (isCyber ? 'bg-rose-600/20 text-rose-200 border-rose-500/30' : 'bg-indigo-100 text-indigo-700 border-indigo-300') 
-              : themeStyles.toolbarBtn
-            }`}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2z"/><path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2z"/><path d="M22 2 2 22"/><path d="M2 2 22 22"/></svg>
-             AI
-          </button> */}
         </div>
       </header>
 
       {/* Main Content Area */}
       <main
-        className="flex-1 overflow-y-auto overflow-x-hidden p-8 pb-96 relative z-10 scroll-smooth"
+        className="flex-1 overflow-y-auto overflow-x-hidden p-8! pb-96 relative z-10 scroll-smooth"
         ref={contentRef}
       >
         <div className="flex flex-row flex-wrap items-start justify-center w-full gap-8 min-h-full">
@@ -466,44 +337,31 @@ function App() {
               isSyncing={isSyncScrolling}
               isPrimary={device.id === "desktop-lg"}
               onUpdateSize={handleUpdateDeviceSize}
-              theme={theme}
             />
           ))}
         </div>
 
         {/* Glass Info Box */}
         {showDisclaimer && (
-          <div
-            className={`fixed bottom-6 left-6 max-w-sm backdrop-blur-2xl border p-5 rounded-2xl z-30 text-xs exclude-screenshot ${isCyber ? "bg-black/50 border-red-500/30 text-red-100/80 shadow-[0_8px_40px_rgba(0,0,0,0.5),0_0_30px_rgba(220,38,38,0.1)]" : "bg-white/60 border-white/50 text-slate-600 shadow-xl"}`}
-          >
-            <div
-              className={`flex justify-between items-start mb-3 border-b pb-2 ${isCyber ? "border-red-500/20" : "border-slate-300/30"}`}
-            >
-              <strong
-                className={`flex items-center gap-2 ${isCyber ? "text-red-100 text-glow-red" : "text-blue-700"}`}
-              >
+          <div className="fixed bottom-6 left-6 max-w-sm backdrop-blur-2xl border p-2! rounded-md z-30 text-xs exclude-screenshot bg-black/55 border-[#ff2b3d]/35 text-[#ffdfe2]/85 shadow-[0_8px_40px_rgba(0,0,0,0.5),0_0_30px_rgba(255,43,61,0.18)]">
+            <div className="flex justify-between items-center mb-3 border-b pb-2! border-[#ff2b3d]/25">
+              <strong className="flex items-center gap-2 text-[#ffe6e9] text-glow-blue">
                 <span className="relative flex h-2 w-2">
-                  <span
-                    className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isCyber ? "bg-red-500" : "bg-blue-400"}`}
-                  ></span>
-                  <span
-                    className={`relative inline-flex rounded-full h-2 w-2 ${isCyber ? "bg-red-500 shadow-[0_0_10px_rgba(220,38,38,0.8)]" : "bg-blue-600"}`}
-                  ></span>
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 bg-[#ff2b3d]"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-[#ff2b3d] shadow-[0_0_10px_rgba(255,43,61,0.8)]"></span>
                 </span>
                 Sec Environment
               </strong>
               <button
                 onClick={() => setShowDisclaimer(false)}
-                className={`transition-all rounded-full p-1 w-5 h-5 flex items-center justify-center ${isCyber ? "bg-red-950/50 border border-red-500/30 hover:bg-red-900/50 hover:text-red-300 hover:shadow-[0_0_10px_rgba(220,38,38,0.3)]" : "bg-slate-200/50 hover:bg-slate-200 hover:text-blue-600"}`}
+                className="transition-all rounded-full p-1 w-5 h-5 flex items-center justify-center bg-[#ff2b3d]/10 border border-[#ff2b3d]/30 hover:bg-[#ff2b3d]/20 hover:text-[#ff4d6d] hover:shadow-[0_0_10px_rgba(255,43,61,0.35)]"
               >
                 ✕
               </button>
             </div>
-            <p className="mb-2 leading-relaxed">
+            <p className="mb-2 mt-2! leading-relaxed">
               This tool uses{" "}
-              <code
-                className={`px-1.5 py-0.5 rounded font-mono border ${isCyber ? "bg-red-950/50 text-red-200 border-red-500/30 shadow-[0_0_10px_rgba(220,38,38,0.1)]" : "bg-blue-100/50 text-blue-700 border-blue-200"}`}
-              >
+              <code className="px-1.5 py-0.5 rounded font-mono border bg-[#ff2b3d]/10 text-[#ff4d6d] border-[#ff2b3d]/30 shadow-[0_0_10px_rgba(255,43,61,0.15)]">
                 webviews
               </code>{" "}
               with shared session. Login once, all devices sync.
@@ -512,24 +370,21 @@ function App() {
         )}
       </main>
 
-      {/* AI Sidebar */}
-      {/* <AIChat isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} /> */}
-
       {/* Add Device Modal */}
       {showAddDeviceModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm exclude-screenshot">
-          <div className={`w-96 p-6 rounded-2xl border ${themeStyles.modalBg}`}>
-            <h2 className="text-lg font-bold mb-4 font-mono">
+          <div className="w-96 p-4! flex flex-col gap-2 rounded-lg border glass-card border-[#ff2b3d]/30 text-white shadow-[0_0_60px_rgba(255,43,61,0.2)]">
+            <h2 className="text-lg font-bold mb-1! font-mono">
               Add Custom Device
             </h2>
-            <div className="space-y-4">
+            <div className="space-y-4!">
               <div>
-                <label className="text-xs uppercase opacity-70 mb-1 block">
+                <label className="text-sm uppercase opacity-70 mb-1! block tracking-wider">
                   Device Name
                 </label>
                 <input
                   type="text"
-                  className={`w-full px-3 py-2 rounded-lg border focus:outline-none ${themeStyles.modalInput}`}
+                  className="w-full px-3! py-2! text-sm rounded-lg border focus:outline-none bg-black/50 border-[#ff2b3d]/25 text-[#ffe6e9] focus:border-[#ff2b3d]/45 backdrop-blur-md"
                   value={newDevice.name}
                   onChange={(e) =>
                     setNewDevice({ ...newDevice, name: e.target.value })
@@ -538,12 +393,12 @@ function App() {
               </div>
               <div className="flex gap-4">
                 <div className="flex-1">
-                  <label className="text-xs uppercase opacity-70 mb-1 block">
+                  <label className="text-sm uppercase opacity-70 mb-1! block tracking-wider">
                     Width (px)
                   </label>
                   <input
                     type="number"
-                    className={`w-full px-3 py-2 rounded-lg border focus:outline-none ${themeStyles.modalInput}`}
+                    className="w-full px-3! py-2! text-sm rounded-lg border focus:outline-none bg-black/50 border-[#ff2b3d]/25 text-[#ffe6e9] focus:border-[#ff2b3d]/45 backdrop-blur-md"
                     value={newDevice.width}
                     onChange={(e) =>
                       setNewDevice({
@@ -554,12 +409,12 @@ function App() {
                   />
                 </div>
                 <div className="flex-1">
-                  <label className="text-xs uppercase opacity-70 mb-1 block">
+                  <label className="text-sm uppercase opacity-70 mb-1! block tracking-wider">
                     Height (px)
                   </label>
                   <input
                     type="number"
-                    className={`w-full px-3 py-2 rounded-lg border focus:outline-none ${themeStyles.modalInput}`}
+                    className="w-full px-3! py-2! text-sm rounded-lg border focus:outline-none bg-black/50 border-[#ff2b3d]/25 text-[#ffe6e9] focus:border-[#ff2b3d]/45 backdrop-blur-md"
                     value={newDevice.height}
                     onChange={(e) =>
                       setNewDevice({
@@ -571,11 +426,11 @@ function App() {
                 </div>
               </div>
               <div>
-                <label className="text-xs uppercase opacity-70 mb-1 block">
+                <label className="text-sm uppercase opacity-70 mb-1! block tracking-wider">
                   Type
                 </label>
                 <select
-                  className={`w-full px-3 py-2 rounded-lg border focus:outline-none ${themeStyles.modalInput}`}
+                  className="w-full px-3! py-2! text-sm rounded-lg border focus:outline-none bg-black/50 border-[#ff2b3d]/25 text-[#ffe6e9] focus:border-[#ff2b3d]/45 backdrop-blur-md"
                   value={newDevice.type}
                   onChange={(e) =>
                     setNewDevice({ ...newDevice, type: e.target.value as any })
@@ -587,16 +442,16 @@ function App() {
                 </select>
               </div>
             </div>
-            <div className="flex justify-end gap-3 mt-6">
+            <div className="flex justify-end gap-3 mt-4!">
               <button
                 onClick={() => setShowAddDeviceModal(false)}
-                className="px-4 py-2 rounded-lg text-sm hover:opacity-80 transition-opacity"
+                className="px-4! py-2! rounded-lg text-md hover:opacity-80 transition-opacity text-[#C0C0C0]"
               >
                 Cancel
               </button>
               <button
                 onClick={handleAddDevice}
-                className={`px-4 py-2 rounded-lg text-sm font-bold shadow-lg transition-all ${isCyber ? "bg-red-600 text-white hover:bg-red-500" : "bg-blue-600 text-white hover:bg-blue-500"}`}
+                className="px-4! py-2! rounded-lg text-md font-bold shadow-lg transition-all bg-[#ff2b3d] text-white hover:bg-[#ff2b3d]/85 hover:shadow-[0_0_20px_rgba(255,43,61,0.45)]"
               >
                 Add Device
               </button>

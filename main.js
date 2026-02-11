@@ -38,9 +38,9 @@ function createWindow() {
 
   if (isDev) {
     const devUrls = [
-      "https://localhost:9898",
-      "https://127.0.0.1:9898",
-      "http://localhost:9898",
+      "https://localhost:9899",
+      "https://127.0.0.1:9899",
+      "http://localhost:9899",
     ];
     let devUrlIndex = 0;
 
@@ -99,8 +99,8 @@ function createWindow() {
       const requestHeaders = { ...details.requestHeaders };
 
       const isLocalDev =
-        details.url.startsWith("https://localhost:9898") ||
-        details.url.startsWith("https://127.0.0.1:9898");
+        details.url.startsWith("https://localhost:9899") ||
+        details.url.startsWith("https://127.0.0.1:9899");
 
       if (isLocalDev) {
         callback({ requestHeaders });

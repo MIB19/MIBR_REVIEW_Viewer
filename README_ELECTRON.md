@@ -10,7 +10,7 @@ npm run electron-dev
 
 Command ini akan:
 
-1. Start Vite dev server di port 9898
+1. Start Vite dev server di port 9899
 2. Otomatis membuka Electron window setelah server ready
 3. Enable hot reload untuk perubahan code
 4. Buka DevTools otomatis
@@ -62,7 +62,7 @@ File executable akan ada di folder `release/`
 
 **Jika Electron tidak membuka:**
 
-- Pastikan port 9898 tidak digunakan aplikasi lain
+- Pastikan port 9899 tidak digunakan aplikasi lain
 - Cek terminal untuk error messages
 
 **Jika masih loading terus:**

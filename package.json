@@ -7,11 +7,11 @@
   "type": "module",
   "main": "main.cjs",
   "scripts": {
-    "dev": "vite --port 9898",
+    "dev": "vite --port 9899",
     "build": "vite build",
     "preview": "vite preview",
     "electron": "electron .",
-    "electron-dev": "concurrently \"npm run dev\" \"wait-on https://localhost:9898 --insecure && electron .\"",
+    "electron-dev": "concurrently \"npm run dev\" \"wait-on https://localhost:9899 --insecure && electron .\"",
     "build:vite": "vite build",
     "build:electron": "npm run build:vite && electron-builder",
     "build:portable": "npm run build:vite && electron-builder --win portable",
@@ -22,7 +22,6 @@
     "package": "npm run build && electron-builder"
   },
   "dependencies": {
-    "@google/genai": "^1.40.0",
     "html2canvas": "1.4.1",
     "react": "^19.2.4",
     "react-dom": "^19.2.4"
@@ -30,6 +29,8 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.18",
     "@types/node": "^22.14.0",
+    "@types/react": "^19.2.13",
+    "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-basic-ssl": "^2.1.4",
     "@vitejs/plugin-react": "^5.0.0",
     "autoprefixer": "^10.4.24",
