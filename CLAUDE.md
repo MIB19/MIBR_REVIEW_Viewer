@@ -43,6 +43,10 @@ npm run build:electron    # Vite build + electron-builder (all platforms)
 - `dist/` — Vite production build (web assets)
 - `release/` — Electron packaged executables (portable, installer, MSI)
 
+## Tech Stack
+
+React 19, TypeScript 5.8, Vite 6, Tailwind CSS v4, Electron 28, html2canvas.
+
 ## Architecture
 
 ### Flat Source Layout
@@ -55,13 +59,17 @@ Source files live at project root, not in `src/`. The `@` import alias resolves 
 
 ### Electron Detection
 
-Both `App.tsx` and `DeviceFrame.tsx` detect Electron at module load time. `DeviceFrame.tsx` uses the more reliable check: creates a `<webview>` element and checks if its constructor is `HTMLUnknownElement`. Based on this, it renders either `<webview>` (Electron) or `<iframe>` (web).
+**Two different detection methods exist** — keep them in sync if changing:
+- `App.tsx`: `window.navigator.userAgent.toLowerCase().includes("electron")` — used for UI logic (showing Electron-specific tips)
+- `DeviceFrame.tsx`: creates a `<webview>` element and checks `constructor.name !== "HTMLUnknownElement"` — more reliable, used to decide `<webview>` vs `<iframe>` rendering
 
 The `<webview>` JSX type is declared globally in `types.ts` — without this, TypeScript won't recognize the `<webview>` element.
 
 ### Electron Main Process (`main.cjs` vs `main.js`)
 
 Two nearly identical Electron entry files exist. `package.json` `"main"` points to `main.cjs`. The `.cjs` version has additional certificate bypass logic (`ignore-certificate-errors` and `allow-insecure-localhost` command-line switches, `NODE_TLS_REJECT_UNAUTHORIZED=0`). Both strip `X-Frame-Options`, `Content-Security-Policy`, and `x-content-type-options` response headers and spoof browser-like request headers.
+
+In dev mode, Electron tries loading in order: `https://localhost:9899` → `https://127.0.0.1:9899` → `http://localhost:9899`.
 
 ### Session Sharing
 
