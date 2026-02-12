@@ -14,7 +14,6 @@ function App() {
   const [urlInput, setUrlInput] = useState(DEFAULT_URL);
   const [activeUrl, setActiveUrl] = useState(DEFAULT_URL);
   const [scale, setScale] = useState(0.6);
-  const [isSyncScrolling, setIsSyncScrolling] = useState(false);
 
   const [showDisclaimer, setShowDisclaimer] = useState(true);
   const [isFlashVisible, setIsFlashVisible] = useState(false);
@@ -293,32 +292,6 @@ function App() {
               </svg>
             </button>
           </div>
-          <div className="h-8 w-px mx-1 bg-white/10"></div>
-          {/* Sync Scroll Toggle */}
-          <button
-            onClick={() => setIsSyncScrolling(!isSyncScrolling)}
-            className={`flex items-center gap-2 px-3! py-2! rounded-sm text-xs font-medium transition-all border backdrop-blur-sm ${
-              isSyncScrolling
-                ? "bg-[#ff2b3d]/30 text-[#ffe6e9] border-[#ff2b3d]/55 shadow-[0_0_20px_rgba(255,43,61,0.35)]"
-                : "bg-[#ff2b3d]/10 border-[#ff2b3d]/25 hover:bg-[#ff2b3d]/20 hover:border-[#ff2b3d]/45 hover:shadow-[0_0_15px_rgba(255,43,61,0.25)] text-[#c9c9c9]/70 hover:text-[#ffe6e9] backdrop-blur-md"
-            }`}
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
-              <path d="M21 3v5h-5" />
-            </svg>
-            Sync
-          </button>
         </div>
       </header>
 
@@ -334,8 +307,6 @@ function App() {
               device={device}
               url={activeUrl}
               scale={scale}
-              isSyncing={isSyncScrolling}
-              isPrimary={device.id === "desktop-lg"}
               onUpdateSize={handleUpdateDeviceSize}
             />
           ))}

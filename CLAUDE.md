@@ -85,12 +85,11 @@ Custom CSS utilities in `index.css`: `.glass`, `.glass-dark`, `.glass-card` (red
 
 ## Key Patterns
 
-- All state lives in `App.tsx` (URL, devices, scale, scroll sync, viewMode). No state management library.
+- All state lives in `App.tsx` (URL, devices, scale, viewMode). No state management library.
 - Two view modes: `"multi"` (side-by-side frames) and `"dashboard"` (default).
 - Device configs are mutable at runtime — users can add custom devices and resize non-mobile devices inline. Mobile devices are rotation-only (not resizable).
 - URL input auto-prepends `https://` if no protocol specified.
 - Screenshot uses `html2canvas` but hides webviews/iframes (they render as blank), so captures only the frame chrome. The UI suggests `Win+Shift+S` for full captures.
 - Mobile devices get a phone-style frame with notch/dynamic island (`border-12`, `rounded-[3rem]`); desktop/tablet get minimal border with corner bracket accents.
-- Sync scrolling: primary device (Desktop Large) broadcasts scroll percentage to secondary devices. In Electron uses `webviewRef.executeJavaScript()`, in browser uses `iframe.contentWindow.scrollTo()` (may fail cross-origin).
 - DeviceFrame has a 15-second loading timeout fallback — reveals content even if webview hasn't fired its load event.
 

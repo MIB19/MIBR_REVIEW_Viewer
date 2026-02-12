@@ -11,10 +11,6 @@ interface DeviceFrameProps {
   device: DeviceConfig;
   url: string;
   scale: number;
-  isSyncing: boolean;
-  onScroll?: (percentage: number) => void;
-  syncScrollPosition?: number;
-  isPrimary?: boolean;
   onUpdateSize?: (id: string, width: number, height: number) => void;
 }
 
@@ -22,10 +18,6 @@ const DeviceFrame: React.FC<DeviceFrameProps> = ({
   device,
   url,
   scale,
-  isSyncing,
-  onScroll,
-  syncScrollPosition,
-  isPrimary = false,
   onUpdateSize,
 }) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -104,34 +96,6 @@ const DeviceFrame: React.FC<DeviceFrameProps> = ({
     setIsEditing(false);
   };
 
-  useEffect(() => {
-    if (!isSyncing || isPrimary) return;
-
-    if (isElectron && webviewRef.current) {
-      if (syncScrollPosition !== undefined) {
-        webviewRef.current
-          .executeJavaScript(
-            `
-          const scrollHeight = document.body.scrollHeight - window.innerHeight;
-          window.scrollTo(0, scrollHeight * ${syncScrollPosition});
-        `,
-          )
-          .catch(() => {});
-      }
-    } else if (iframeRef.current) {
-      try {
-        const win = iframeRef.current.contentWindow;
-        if (win && syncScrollPosition !== undefined) {
-          const scrollHeight = win.document.body.scrollHeight - win.innerHeight;
-          const targetY = scrollHeight * syncScrollPosition;
-          win.scrollTo(0, targetY);
-        }
-      } catch (e) {
-        // Cross-origin blocked
-      }
-    }
-  }, [syncScrollPosition, isSyncing, isPrimary]);
-
   return (
     <div className="flex flex-col items-center select-none group relative w-fit gap-3">
       {/* Device Label */}
@@ -197,7 +161,7 @@ const DeviceFrame: React.FC<DeviceFrameProps> = ({
         ) : (
           <>
             <div
-              className={`w-2 h-2 rounded-full ${isPrimary ? "bg-[#ff2b3d] shadow-[0_0_15px_rgba(255,43,61,0.8),0_0_30px_rgba(255,77,109,0.55)] animate-pulse" : "bg-[#ff2b3d]/55 shadow-[0_0_5px_rgba(255,43,61,0.25)]"}`}
+              className="w-2 h-2 rounded-full bg-[#ff2b3d]/55 shadow-[0_0_5px_rgba(255,43,61,0.25)]"
             ></div>
             <span className="font-bold transition-colors text-[#cfcfcf] group-hover:text-[#ffe6e9]">
               {device.name}
