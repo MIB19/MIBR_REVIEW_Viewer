@@ -1,4 +1,4 @@
-const { app, BrowserWindow } = require("electron");
+const { app, BrowserWindow, session } = require("electron");
 const path = require("path");
 
 // Disable certificate errors BEFORE anything loads
@@ -84,22 +84,24 @@ function createWindow() {
   const userAgent = win.webContents.userAgent.replace(/Electron\/[\d.]+/, "");
   win.webContents.userAgent = userAgent;
 
-  // Bypass X-Frame-Options and CSP
-  win.webContents.session.webRequest.onHeadersReceived((details, callback) => {
-    const responseHeaders = { ...details.responseHeaders };
+  // Apply interceptors to both the main window session and the webview shared session
+  const webviewSession = session.fromPartition("persist:shared");
+  [win.webContents.session, webviewSession].forEach((ses) => {
+    // Bypass X-Frame-Options and CSP
+    ses.webRequest.onHeadersReceived((details, callback) => {
+      const responseHeaders = { ...details.responseHeaders };
 
-    delete responseHeaders["x-frame-options"];
-    delete responseHeaders["X-Frame-Options"];
-    delete responseHeaders["content-security-policy"];
-    delete responseHeaders["Content-Security-Policy"];
-    delete responseHeaders["x-content-type-options"];
+      delete responseHeaders["x-frame-options"];
+      delete responseHeaders["X-Frame-Options"];
+      delete responseHeaders["content-security-policy"];
+      delete responseHeaders["Content-Security-Policy"];
+      delete responseHeaders["x-content-type-options"];
 
-    callback({ responseHeaders });
-  });
+      callback({ responseHeaders });
+    });
 
-  // Add headers to look like real browser request
-  win.webContents.session.webRequest.onBeforeSendHeaders(
-    (details, callback) => {
+    // Add headers to look like real browser request
+    ses.webRequest.onBeforeSendHeaders((details, callback) => {
       const requestHeaders = { ...details.requestHeaders };
 
       const isLocalDev =
@@ -111,7 +113,6 @@ function createWindow() {
         return;
       }
 
-      // Add browser-like headers
       requestHeaders["User-Agent"] =
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
       requestHeaders["Accept"] =
@@ -123,12 +124,7 @@ function createWindow() {
       requestHeaders["Upgrade-Insecure-Requests"] = "1";
 
       callback({ requestHeaders });
-    },
-  );
-
-  // Handle session to allow cookies
-  win.webContents.session.cookies.on("changed", () => {
-    // Cookies are persisted automatically
+    });
   });
 }
 
@@ -152,16 +148,12 @@ app.on("window-all-closed", () => {
   }
 });
 
-// Disable certificate errors for localhost development
+// Disable certificate errors (localhost + webview targets)
 app.on(
   "certificate-error",
   (event, webContents, url, error, certificate, callback) => {
-    if (url.includes("localhost") || url.includes("127.0.0.1")) {
-      event.preventDefault();
-      callback(true);
-    } else {
-      callback(false);
-    }
+    event.preventDefault();
+    callback(true);
   },
 );
 
