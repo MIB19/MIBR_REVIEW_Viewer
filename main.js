@@ -76,6 +76,11 @@ function createWindow() {
 
   win.on("closed", () => {});
 
+  // Force all webviews to use persist:shared partition from main process
+  win.webContents.on("will-attach-webview", (event, webPreferences, params) => {
+    webPreferences.partition = "persist:shared";
+  });
+
   // Modify user agent to mimic real browser
   const userAgent = win.webContents.userAgent.replace(/Electron\/[\d.]+/, "");
   win.webContents.userAgent = userAgent;

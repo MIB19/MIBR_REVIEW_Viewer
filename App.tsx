@@ -29,6 +29,19 @@ function App() {
     name: "New Device",
   });
 
+  // Session sync: reload other webviews when one navigates (login)
+  const [syncTrigger, setSyncTrigger] = useState(0);
+  const [syncSourceId, setSyncSourceId] = useState("");
+  const syncTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+
+  const handleDeviceNavigate = (deviceId: string) => {
+    if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current);
+    syncTimeoutRef.current = setTimeout(() => {
+      setSyncSourceId(deviceId);
+      setSyncTrigger((prev) => prev + 1);
+    }, 1000);
+  };
+
   // Refs for Screenshot
   const contentRef = useRef<HTMLDivElement>(null);
 
@@ -93,6 +106,10 @@ function App() {
         "Screenshot failed. For full screenshots with page content, use system screenshot (Win+Shift+S or PrtSc).",
       );
     }
+  };
+
+  const handleDeleteDevice = (id: string) => {
+    setDevices((prev) => prev.filter((d) => d.id !== id));
   };
 
   const handleAddDevice = () => {
@@ -308,6 +325,10 @@ function App() {
               url={activeUrl}
               scale={scale}
               onUpdateSize={handleUpdateDeviceSize}
+              onDelete={handleDeleteDevice}
+              onNavigate={handleDeviceNavigate}
+              reloadTrigger={syncTrigger}
+              reloadSourceId={syncSourceId}
             />
           ))}
         </div>

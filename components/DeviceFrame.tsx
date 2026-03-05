@@ -12,6 +12,10 @@ interface DeviceFrameProps {
   url: string;
   scale: number;
   onUpdateSize?: (id: string, width: number, height: number) => void;
+  onDelete?: (id: string) => void;
+  onNavigate?: (deviceId: string) => void;
+  reloadTrigger?: number;
+  reloadSourceId?: string;
 }
 
 const DeviceFrame: React.FC<DeviceFrameProps> = ({
@@ -19,6 +23,10 @@ const DeviceFrame: React.FC<DeviceFrameProps> = ({
   url,
   scale,
   onUpdateSize,
+  onDelete,
+  onNavigate,
+  reloadTrigger,
+  reloadSourceId,
 }) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const webviewRef = useRef<any>(null);
@@ -26,6 +34,36 @@ const DeviceFrame: React.FC<DeviceFrameProps> = ({
   const [loading, setLoading] = useState(true);
   const loadedUrlRef = useRef<string>("");
   const listenersAttachedRef = useRef(false);
+  const onNavigateRef = useRef(onNavigate);
+  const initialLoadDoneRef = useRef(false);
+  const cooldownRef = useRef(false);
+
+  // Keep callback ref current
+  useEffect(() => {
+    onNavigateRef.current = onNavigate;
+  }, [onNavigate]);
+
+  // Reset initial load flag when URL changes
+  useEffect(() => {
+    initialLoadDoneRef.current = false;
+  }, [url]);
+
+  // Reload webview when another device navigates (session sync)
+  useEffect(() => {
+    if (
+      reloadTrigger &&
+      reloadTrigger > 0 &&
+      reloadSourceId !== device.id &&
+      webviewRef.current &&
+      isElectron
+    ) {
+      cooldownRef.current = true;
+      webviewRef.current.reload();
+      setTimeout(() => {
+        cooldownRef.current = false;
+      }, 5000);
+    }
+  }, [reloadTrigger]);
 
   // Reset loading when URL changes, with timeout fallback
   useEffect(() => {
@@ -50,19 +88,23 @@ const DeviceFrame: React.FC<DeviceFrameProps> = ({
         listenersAttachedRef.current = true;
 
         element.addEventListener("did-stop-loading", () => {
+          initialLoadDoneRef.current = true;
           loadedUrlRef.current = element.src || url;
           setLoading(false);
         });
 
-        element.addEventListener(
-          "did-fail-load",
-          (_event: any, errorCode: number) => {
-            if (errorCode !== -3) {
-              loadedUrlRef.current = element.src || url;
-              setLoading(false);
-            }
-          },
-        );
+        element.addEventListener("did-fail-load", (event: any) => {
+          if (event.errorCode !== -3) {
+            loadedUrlRef.current = element.src || url;
+            setLoading(false);
+          }
+        });
+
+        element.addEventListener("did-navigate", () => {
+          if (initialLoadDoneRef.current && !cooldownRef.current) {
+            onNavigateRef.current?.(device.id);
+          }
+        });
       }
     }
   };
@@ -160,9 +202,7 @@ const DeviceFrame: React.FC<DeviceFrameProps> = ({
           </div>
         ) : (
           <>
-            <div
-              className="w-2 h-2 rounded-full bg-[#ff2b3d]/55 shadow-[0_0_5px_rgba(255,43,61,0.25)]"
-            ></div>
+            <div className="w-2 h-2 rounded-full bg-[#ff2b3d]/55 shadow-[0_0_5px_rgba(255,43,61,0.25)]"></div>
             <span className="font-bold transition-colors text-[#cfcfcf] group-hover:text-[#ffe6e9]">
               {device.name}
             </span>
@@ -175,7 +215,7 @@ const DeviceFrame: React.FC<DeviceFrameProps> = ({
               {displayHeight}
             </span>
 
-            <div className="flex items-center gap-1 ml-1 border-l border-[#ff2b3d]/25 group-hover:border-[#ff2b3d]/40 pl-2!">
+            <div className="flex items-center gap-2! ml-1 border-l border-[#ff2b3d]/25 group-hover:border-[#ff2b3d]/40 pl-2!">
               <button
                 onClick={() => setIsRotated(!isRotated)}
                 className="transition-all hover:text-[#ff4d6d] hover:drop-shadow-[0_0_8px_rgba(255,43,61,0.6)]"
@@ -214,6 +254,28 @@ const DeviceFrame: React.FC<DeviceFrameProps> = ({
                     strokeLinejoin="round"
                   >
                     <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
+                  </svg>
+                </button>
+              )}
+              {onDelete && (
+                <button
+                  onClick={() => onDelete(device.id)}
+                  className="transition-all hover:text-[#ff2b3d] hover:drop-shadow-[0_0_8px_rgba(255,43,61,0.6)]"
+                  title="Remove Device"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
                   </svg>
                 </button>
               )}

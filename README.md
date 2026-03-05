@@ -1,5 +1,4 @@
 <div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
 </div>
 
 # MIBR Review Viewer
@@ -43,11 +42,13 @@ Available as both a web app and Electron desktop app (Electron version bypasses 
 3. Run the development server:
 
    **Web mode:**
+
    ```bash
    npm run dev
    ```
 
    **Electron mode:**
+
    ```bash
    npm run electron-dev
    ```
@@ -57,18 +58,21 @@ Available as both a web app and Electron desktop app (Electron version bypasses 
 ## 📦 Build
 
 **Web app:**
+
 ```bash
 npm run build
 npm run preview
 ```
 
 **Electron app:**
+
 ```bash
 npm run build
 npm run electron
 ```
 
 **Package Electron (portable + MSI):**
+
 ```bash
 npm run package
 ```

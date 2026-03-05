@@ -67,13 +67,13 @@ The `<webview>` JSX type is declared globally in `types.ts` — without this, Ty
 
 ### Electron Main Process (`main.cjs` vs `main.js`)
 
-Two nearly identical Electron entry files exist. `package.json` `"main"` points to `main.cjs`. The `.cjs` version has additional certificate bypass logic (`ignore-certificate-errors` and `allow-insecure-localhost` command-line switches, `NODE_TLS_REJECT_UNAUTHORIZED=0`). Both strip `X-Frame-Options`, `Content-Security-Policy`, and `x-content-type-options` response headers and spoof browser-like request headers.
+Two nearly identical Electron entry files exist. **`main.cjs` is the active entry** (`package.json` `"main"`). The `.cjs` version has additional certificate bypass logic (`ignore-certificate-errors` and `allow-insecure-localhost` command-line switches, `NODE_TLS_REJECT_UNAUTHORIZED=0`). Both strip `X-Frame-Options`, `Content-Security-Policy`, and `x-content-type-options` response headers and spoof browser-like request headers.
 
 In dev mode, Electron tries loading in order: `https://localhost:9899` → `https://127.0.0.1:9899` → `http://localhost:9899`.
 
-### Session Sharing
+### Session Sharing & Navigation Sync
 
-All Electron webviews use `partition: "persist:shared"` so login sessions are shared across all device frames — login once, all devices sync.
+All Electron webviews use `partition: "persist:shared"` so login sessions are shared across all device frames. When a webview fires `did-navigate` (e.g., after login redirect), `DeviceFrame` calls `onNavigate` which triggers a debounced reload of all *other* webviews via `syncTrigger`/`syncSourceId` state in `App.tsx`. A cooldown mechanism in `DeviceFrame` prevents reload loops.
 
 ## Styling
 
@@ -92,4 +92,5 @@ Custom CSS utilities in `index.css`: `.glass`, `.glass-dark`, `.glass-card` (red
 - Screenshot uses `html2canvas` but hides webviews/iframes (they render as blank), so captures only the frame chrome. The UI suggests `Win+Shift+S` for full captures.
 - Mobile devices get a phone-style frame with notch/dynamic island (`border-12`, `rounded-[3rem]`); desktop/tablet get minimal border with corner bracket accents.
 - DeviceFrame has a 15-second loading timeout fallback — reveals content even if webview hasn't fired its load event.
+- Default devices defined in `constants.ts`: Desktop Large (1440x900), iPad Pro (834x1194), iPhone 14 Pro (393x852), Android Small (360x800).
 
