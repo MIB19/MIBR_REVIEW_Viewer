@@ -1,4 +1,4 @@
-const { app, BrowserWindow, session } = require("electron");
+const { app, BrowserWindow, session, ipcMain } = require("electron");
 const path = require("path");
 
 function createWindow() {
@@ -12,6 +12,7 @@ function createWindow() {
       allowRunningInsecureContent: true,
       webviewTag: true,
       partition: "persist:main",
+      preload: path.join(__dirname, "preload.cjs"),
     },
     backgroundColor: "#050202",
     title: "MIBR Review Viewer - Multi Device",
@@ -85,52 +86,115 @@ function createWindow() {
   const userAgent = win.webContents.userAgent.replace(/Electron\/[\d.]+/, "");
   win.webContents.userAgent = userAgent;
 
-  // Apply interceptors to both the main window session and the webview shared session
-  const webviewSession = session.fromPartition("persist:shared");
-  [win.webContents.session, webviewSession].forEach((ses) => {
-    // Bypass X-Frame-Options and CSP
-    ses.webRequest.onHeadersReceived((details, callback) => {
-      const responseHeaders = { ...details.responseHeaders };
+  // --- Main window session: security bypass only ---
+  const mainSession = win.webContents.session;
 
-      delete responseHeaders["x-frame-options"];
-      delete responseHeaders["X-Frame-Options"];
-      delete responseHeaders["content-security-policy"];
-      delete responseHeaders["Content-Security-Policy"];
-      delete responseHeaders["x-content-type-options"];
-
-      callback({ responseHeaders });
-    });
-
-    // Add headers to look like real browser request
-    ses.webRequest.onBeforeSendHeaders((details, callback) => {
-      const requestHeaders = { ...details.requestHeaders };
-
-      const isLocalDev =
-        details.url.startsWith("https://localhost:9899") ||
-        details.url.startsWith("https://127.0.0.1:9899");
-
-      if (isLocalDev) {
-        callback({ requestHeaders });
-        return;
-      }
-
-      requestHeaders["User-Agent"] =
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
-      requestHeaders["Accept"] =
-        "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8";
-      requestHeaders["Accept-Language"] = "en-US,en;q=0.5";
-      requestHeaders["Accept-Encoding"] = "gzip, deflate";
-      requestHeaders["DNT"] = "1";
-      requestHeaders["Connection"] = "keep-alive";
-      requestHeaders["Upgrade-Insecure-Requests"] = "1";
-
-      callback({ requestHeaders });
-    });
+  mainSession.webRequest.onHeadersReceived((details, callback) => {
+    const responseHeaders = { ...details.responseHeaders };
+    delete responseHeaders["x-frame-options"];
+    delete responseHeaders["X-Frame-Options"];
+    delete responseHeaders["content-security-policy"];
+    delete responseHeaders["Content-Security-Policy"];
+    delete responseHeaders["x-content-type-options"];
+    callback({ responseHeaders });
   });
+
+  mainSession.webRequest.onBeforeSendHeaders((details, callback) => {
+    const requestHeaders = { ...details.requestHeaders };
+    const isLocalDev =
+      details.url.startsWith("https://localhost:9899") ||
+      details.url.startsWith("https://127.0.0.1:9899");
+    if (isLocalDev) {
+      callback({ requestHeaders });
+      return;
+    }
+    requestHeaders["User-Agent"] =
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
+    requestHeaders["Accept"] =
+      "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8";
+    requestHeaders["Accept-Language"] = "en-US,en;q=0.5";
+    requestHeaders["Accept-Encoding"] = "gzip, deflate";
+    requestHeaders["DNT"] = "1";
+    requestHeaders["Connection"] = "keep-alive";
+    requestHeaders["Upgrade-Insecure-Requests"] = "1";
+    callback({ requestHeaders });
+  });
+
+  // --- Webview session (persist:shared): security bypass + cache override ---
+  const webviewSession = session.fromPartition("persist:shared");
+
+  webviewSession.webRequest.onHeadersReceived((details, callback) => {
+    const responseHeaders = { ...details.responseHeaders };
+
+    // Security bypass
+    delete responseHeaders["x-frame-options"];
+    delete responseHeaders["X-Frame-Options"];
+    delete responseHeaders["content-security-policy"];
+    delete responseHeaders["Content-Security-Policy"];
+    delete responseHeaders["x-content-type-options"];
+
+    // Cache override — skip localhost/dev URLs
+    const isLocalDev =
+      details.url.startsWith("https://localhost") ||
+      details.url.startsWith("https://127.0.0.1") ||
+      details.url.startsWith("http://localhost") ||
+      details.url.startsWith("http://127.0.0.1");
+
+    if (!isLocalDev) {
+      const existingCC =
+        responseHeaders["cache-control"]?.[0] ||
+        responseHeaders["Cache-Control"]?.[0] ||
+        "";
+      const maxAgeMatch = existingCC.match(/max-age=(\d+)/);
+      const existingMaxAge = maxAgeMatch ? parseInt(maxAgeMatch[1], 10) : 0;
+
+      // Respect no-store (sensitive/authenticated responses)
+      if (
+        !existingCC.includes("no-store") &&
+        (existingMaxAge < 60 || /no-cache|private/.test(existingCC))
+      ) {
+        delete responseHeaders["cache-control"];
+        delete responseHeaders["Cache-Control"];
+        delete responseHeaders["pragma"];
+        delete responseHeaders["Pragma"];
+        responseHeaders["Cache-Control"] = ["public, max-age=300"];
+      }
+    }
+
+    callback({ responseHeaders });
+  });
+
+  webviewSession.webRequest.onBeforeSendHeaders((details, callback) => {
+    const requestHeaders = { ...details.requestHeaders };
+    const isLocalDev =
+      details.url.startsWith("https://localhost:9899") ||
+      details.url.startsWith("https://127.0.0.1:9899");
+    if (isLocalDev) {
+      callback({ requestHeaders });
+      return;
+    }
+    requestHeaders["User-Agent"] =
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
+    requestHeaders["Accept"] =
+      "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8";
+    requestHeaders["Accept-Language"] = "en-US,en;q=0.5";
+    requestHeaders["Accept-Encoding"] = "gzip, deflate";
+    requestHeaders["DNT"] = "1";
+    requestHeaders["Connection"] = "keep-alive";
+    requestHeaders["Upgrade-Insecure-Requests"] = "1";
+    callback({ requestHeaders });
+  });
+
 }
 
 // This method will be called when Electron has finished initialization
 app.whenReady().then(() => {
+  // IPC: clear webview HTTP cache (not cookies/localStorage) — registered once
+  ipcMain.handle("clear-webview-cache", async () => {
+    await session.fromPartition("persist:shared").clearCache();
+    console.log("[main] webview cache cleared");
+  });
+
   createWindow();
 
   app.on("activate", () => {

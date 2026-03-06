@@ -50,6 +50,7 @@
       "dist/**/*",
       "main.cjs",
       "main.js",
+      "preload.cjs",
       "package.json"
     ],
     "directories": {

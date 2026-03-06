@@ -23,4 +23,10 @@ declare global {
       >;
     }
   }
+
+  interface Window {
+    electronAPI?: {
+      clearWebviewCache: () => Promise<void>;
+    };
+  }
 }
